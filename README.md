@@ -4,7 +4,7 @@ A clean, production-ready .NET Web API that integrates with NewsAPI.org to fetch
 
 ## Requirements
 
-- **.NET SDK 9.0** or higher
+- **.NET SDK 8.0** or higher
 
 ## Architecture
 
@@ -16,7 +16,7 @@ This solution follows clean architecture principles with the following structure
 
 ### Key Technologies
 
-- **ASP.NET Core Web API** (.NET 9.0)
+- **ASP.NET Core Web API** (.NET 8.0)
 - **MediatR** - For CQRS pattern implementation
 - **HttpClientFactory** - For typed HTTP client management
 - **Swagger/OpenAPI** - API documentation
