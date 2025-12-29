@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\TechnicalAssessmentApplication\TechnicalAssessmentApplication.csproj" />
+    <ProjectReference Include="..\TechnicalAssessmentApplication\TechnicalAssessmentApplication.csproj" />
   </ItemGroup>
 
 </Project>
