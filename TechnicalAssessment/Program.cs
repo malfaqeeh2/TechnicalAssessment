@@ -19,6 +19,9 @@ builder.Services.AddSwaggerGen(c =>
 // Register MediatR
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(GetNewsQueryHandler).Assembly));
 
+
+builder.Services.AddMemoryCache();
+
 // Register typed HttpClient using HttpClientFactory
 builder.Services.AddHttpClient("NewsApi", client =>
 {

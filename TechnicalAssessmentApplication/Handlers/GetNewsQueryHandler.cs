@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Net;
@@ -14,19 +15,35 @@ namespace TechnicalAssessmentApplication.Handlers
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
         private readonly ILogger<GetNewsQueryHandler> _logger;
+        private readonly IMemoryCache _memoryCache;
+        private const int CacheExpirationSeconds = 60;
 
         public GetNewsQueryHandler(
             IHttpClientFactory httpClientFactory,
             IConfiguration configuration,
-            ILogger<GetNewsQueryHandler> logger)
+            ILogger<GetNewsQueryHandler> logger,
+            IMemoryCache memoryCache)
         {
             _httpClientFactory = httpClientFactory;
             _configuration = configuration;
             _logger = logger;
+            _memoryCache = memoryCache;
         }
 
         public async Task<NewsResponseDto> Handle(GetNewsQuery request, CancellationToken cancellationToken)
         {
+
+            var cacheKey = $"news:uae:page:{request.Page}";
+
+            // Try to get from cache first
+            if (_memoryCache.TryGetValue(cacheKey, out NewsResponseDto? cachedResult))
+            {
+                _logger.LogInformation("Cache hit for key: {CacheKey}", cacheKey);
+                return cachedResult!;
+            }
+
+            _logger.LogInformation("Cache miss for key: {CacheKey}. Fetching from API...", cacheKey);
+
             var apiKey = _configuration["NewsApi:ApiKey"] 
                 ?? throw new InvalidOperationException("NewsApi:ApiKey is not configured");
             
@@ -67,13 +84,25 @@ namespace TechnicalAssessmentApplication.Handlers
                     .Select(NewsMapper.MapToResponseDto)
                     .ToList() ?? new List<NewsArticleResponseDto>();
 
-                return new NewsResponseDto
+                var result = new NewsResponseDto
                 {
                     Page = request.Page,
                     PageSize = 20, // Fixed page size as per requirements
                     TotalResults = newsApiResponse.TotalResults,
                     Items = mappedArticles
                 };
+
+                // Store in cache with expiration
+                var cacheOptions = new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(CacheExpirationSeconds),
+                    SlidingExpiration = null // Use absolute expiration only
+                };
+
+                _memoryCache.Set(cacheKey, result, cacheOptions);
+                _logger.LogInformation("Cached result for key: {CacheKey} with TTL: {TTL} seconds", cacheKey, CacheExpirationSeconds);
+
+                return result;
             }
             catch (HttpRequestException ex)
             {
